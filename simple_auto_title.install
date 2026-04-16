@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Funciones de instalación y desinstalación para el módulo Simple Auto Title.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function simple_auto_title_install() {
+  $config = \Drupal::configFactory()->getEditable('simple_auto_title.settings');
+
+  // Establecer valores por defecto si no existen.
+  if ($config->get('title_pattern') === NULL) {
+    $config->set('title_pattern', '[node:nid] - [node:created:custom:Y-m-d]')
+      ->set('enabled_content_types', [])
+      ->set('hide_title_field', FALSE)
+      ->save();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function simple_auto_title_uninstall() {
+  // Eliminar la configuración del módulo al desinstalar.
+  \Drupal::configFactory()->getEditable('simple_auto_title.settings')->delete();
+}

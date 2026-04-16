@@ -1,0 +1,8 @@
+name: 'Simple Auto Title'
+type: module
+description: 'Genera automáticamente el título de los nodos basado en patrones de tokens. Versión ligera y fácil de usar.'
+package: 'Custom'
+core_version_requirement: ^10 || ^11
+dependencies:
+  - drupal:node
+  - token:token

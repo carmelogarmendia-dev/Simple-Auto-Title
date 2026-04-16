@@ -1,0 +1,4 @@
+'administer simple auto title':
+  title: 'Administrar Simple Auto Title'
+  description: 'Permite configurar la generación automática de títulos'
+  restrict access: true

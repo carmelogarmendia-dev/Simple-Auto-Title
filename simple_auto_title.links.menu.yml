@@ -1,0 +1,6 @@
+simple_auto_title.settings:
+  title: 'Simple Auto Title'
+  description: 'Configurar generación automática de títulos para nodos'
+  parent: system.admin_structure
+  route_name: simple_auto_title.settings
+  weight: 10

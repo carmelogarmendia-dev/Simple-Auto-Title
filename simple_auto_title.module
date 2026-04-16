@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Funciones principales del módulo Simple Auto Title.
+ */
+
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_entity_presave().
+ * Genera el título automáticamente antes de guardar el nodo.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ *   La entidad que se va a guardar.
+ */
+function simple_auto_title_entity_presave($entity) {
+  // Solo actuar sobre nodos.
+  if ($entity->getEntityTypeId() !== 'node') {
+    return;
+  }
+
+  /** @var \Drupal\node\NodeInterface $entity */
+
+  // Cargar la configuración del módulo.
+  $config = \Drupal::config('simple_auto_title.settings');
+
+  // Obtener los tipos de contenido activados.
+  $enabled_types = $config->get('enabled_content_types') ?: [];
+
+  // Si este tipo de contenido no está activado, salir.
+  if (!in_array($entity->bundle(), $enabled_types)) {
+    return;
+  }
+
+  // Obtener el patrón del título.
+  $pattern = $config->get('title_pattern');
+
+  // Si no hay patrón, no hacer nada.
+  if (empty($pattern)) {
+    return;
+  }
+
+  // Usar el servicio de token para reemplazar el patrón.
+  // 'clear' => TRUE elimina tokens no resueltos.
+  $token_service = \Drupal::token();
+  $title = $token_service->replace($pattern, ['node' => $entity], ['clear' => TRUE]);
+
+  // Limpiar el título.
+  // DecodeEntities para evitar &amp; y strip_tags para seguridad.
+  $title = Html::decodeEntities(strip_tags($title));
+  $title = trim($title);
+
+  // Si después de limpiar el título está vacío, poner un valor por defecto.
+  if (empty($title)) {
+    $date_formatter = \Drupal::service('date.formatter');
+    $title = t('Sin título') . ' - ' . $date_formatter->format(time(), 'custom', 'Y-m-d H:i:s');
+  }
+
+  // Asignar el título al nodo.
+  $entity->setTitle($title);
+}
+
+/**
+ * Implements hook_node_type_delete().
+ * Limpia la configuración cuando se elimina un tipo de contenido.
+ */
+function simple_auto_title_node_type_delete($node_type) {
+  $config = \Drupal::configFactory()->getEditable('simple_auto_title.settings');
+  $enabled_types = $config->get('enabled_content_types') ?: [];
+
+  $key = array_search($node_type->id(), $enabled_types);
+
+  if ($key !== FALSE) {
+    unset($enabled_types[$key]);
+    $config->set('enabled_content_types', array_values($enabled_types))->save();
+
+    \Drupal::logger('simple_auto_title')->notice('Se ha eliminado el tipo de contenido @type de la configuración.', [
+      '@type' => $node_type->id(),
+    ]);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ * Oculta el campo título en los formularios de nodo según la configuración.
+ */
+function simple_auto_title_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Verificar que estamos en un formulario de nodo.
+  if (strpos($form_id, 'node_') !== 0 && $form_id !== 'node_form') {
+    return;
+  }
+
+  $form_object = $form_state->getFormObject();
+  if (!method_exists($form_object, 'getEntity')) {
+    return;
+  }
+
+  /** @var \Drupal\node\NodeInterface $node */
+  $node = $form_object->getEntity();
+
+  $config = \Drupal::config('simple_auto_title.settings');
+  $enabled_types = $config->get('enabled_content_types') ?: [];
+
+  if (!in_array($node->bundle(), $enabled_types)) {
+    return;
+  }
+
+  if ($config->get('hide_title_field')) {
+    $form['title']['#access'] = FALSE;
+    \Drupal::messenger()->addMessage(t('El título se generará automáticamente al guardar.'), 'info');
+  }
+}

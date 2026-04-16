@@ -1,0 +1,7 @@
+simple_auto_title.settings:
+  path: '/admin/config/content/simple-auto-title'
+  defaults:
+    _form: '\Drupal\simple_auto_title\Form\SettingsForm'
+    _title: 'Simple Auto Title'
+  requirements:
+    _permission: 'administer simple auto title'
