@@ -1,4 +1,4 @@
-# Simple Auto Title
+# Simple Auto Title (Sucesor de Automatic node title de la versión 7 de Drupal)
 
 ## ¿Por qué este módulo?
 
